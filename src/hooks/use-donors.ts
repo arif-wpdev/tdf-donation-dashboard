@@ -12,6 +12,8 @@ interface DonorsParams {
   sortBy?: "lastDonation" | "totalSpent" | "ordersCount";
   sortOrder?: "asc" | "desc";
   fundId?: string | "all";
+  fromDate?: string;
+  toDate?: string;
 }
 
 async function fetchDonors(params: DonorsParams) {
@@ -27,6 +29,8 @@ async function fetchDonors(params: DonorsParams) {
   if (params.sortBy) query.set("sortBy", params.sortBy);
   if (params.sortOrder) query.set("sortOrder", params.sortOrder);
   if (params.fundId && params.fundId !== "all") query.set("fundId", params.fundId);
+  if (params.fromDate) query.set("fromDate", params.fromDate);
+  if (params.toDate) query.set("toDate", params.toDate);
 
   const res = await fetch(`/api/donors?${query.toString()}`);
   if (!res.ok) throw new Error("Failed to fetch donors");

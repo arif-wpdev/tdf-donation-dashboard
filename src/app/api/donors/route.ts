@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
       sortBy: searchParams.get("sortBy") ?? undefined,
       sortOrder: searchParams.get("sortOrder") ?? undefined,
       fundId: searchParams.get("fundId") ?? undefined,
+      fromDate: searchParams.get("fromDate") ?? undefined,
+      toDate: searchParams.get("toDate") ?? undefined,
     });
 
     if (!parsed.success) {
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { page, limit, search, minAmount, maxAmount, minCount, maxCount, sortBy, sortOrder, fundId } = parsed.data;
+    const { page, limit, search, minAmount, maxAmount, minCount, maxCount, sortBy, sortOrder, fundId, fromDate, toDate } = parsed.data;
 
     const where: Prisma.DonorWhereInput = {
       orgId,
@@ -87,10 +89,16 @@ export async function GET(request: NextRequest) {
           ...(maxCount !== undefined && { lte: maxCount }),
         },
       }),
-      ...(fundId && {
+      ...( (fromDate || toDate || fundId) && {
         donations: {
           some: {
-            fundId,
+            ...(fundId && { fundId }),
+            ...( (fromDate || toDate) && {
+              wcDatePaid: {
+                ...(fromDate && { gte: fromDate }),
+                ...(toDate && { lte: toDate }),
+              }
+            }),
             status: "COMPLETED",
           }
         }

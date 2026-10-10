@@ -95,6 +95,8 @@ export const donorFilterSchema = paginationSchema.extend({
   sortBy: z.enum(["lastDonation", "totalSpent", "ordersCount"]).default("lastDonation"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
   fundId: z.string().optional(),
+  fromDate: z.coerce.date().optional(),
+  toDate: z.coerce.date().optional(),
 });
 
 export type DonorFilterInput = z.infer<typeof donorFilterSchema>;

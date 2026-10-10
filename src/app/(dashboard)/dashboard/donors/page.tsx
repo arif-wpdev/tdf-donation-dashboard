@@ -18,6 +18,8 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
 
 export default function DonorsDirectoryPage() {
   const [search, setSearch] = useState("");
@@ -30,13 +32,18 @@ export default function DonorsDirectoryPage() {
   const [sortBy, setSortBy] = useState<"lastDonation" | "totalSpent" | "ordersCount">("lastDonation");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [fundId, setFundId] = useState<string | "all">("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   const { data: fundsData } = useFunds({ limit: 100 });
   
-  const { data, isLoading } = useDonors({ search, page, limit, minAmount, maxAmount, minCount, maxCount, sortBy, sortOrder, fundId });
+  const { data, isLoading } = useDonors({ 
+    search, page, limit, minAmount, maxAmount, minCount, maxCount, sortBy, sortOrder, fundId,
+    fromDate: dateRange?.from?.toISOString(),
+    toDate: dateRange?.to?.toISOString()
+  });
 
-  const activeFilterCount = [minAmount, maxAmount, minCount, maxCount].filter(v => v !== "").length + (fundId !== "all" ? 1 : 0);
+  const activeFilterCount = [minAmount, maxAmount, minCount, maxCount].filter(v => v !== "").length + (fundId !== "all" ? 1 : 0) + (dateRange?.from ? 1 : 0);
 
   const handleExport = async (exportFormat: "csv" | "excel" | "pdf") => {
     try {
@@ -51,6 +58,8 @@ export default function DonorsDirectoryPage() {
       if (minCount !== "") params.append("minCount", minCount.toString());
       if (maxCount !== "") params.append("maxCount", maxCount.toString());
       if (fundId !== "all") params.append("fundId", fundId);
+      if (dateRange?.from) params.append("fromDate", dateRange.from.toISOString());
+      if (dateRange?.to) params.append("toDate", dateRange.to.toISOString());
       params.append("sortBy", sortBy);
       params.append("sortOrder", sortOrder);
       
@@ -265,6 +274,28 @@ export default function DonorsDirectoryPage() {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
+                      <span className="text-xs font-medium">Donation Date</span>
+                      <DateRangePicker 
+                        date={dateRange} 
+                        setDate={(date) => { setDateRange(date); setPage(1); }} 
+                        className="w-full" 
+                        trigger={
+                          <Button variant="outline" className="w-full justify-start text-left font-normal h-10 px-3 py-2 rounded-md border border-input bg-transparent text-sm shadow-sm hover:bg-accent hover:text-accent-foreground">
+                            {dateRange?.from ? (
+                              dateRange.to ? (
+                                `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`
+                              ) : (
+                                format(dateRange.from, "LLL dd, y")
+                              )
+                            ) : (
+                              <span className="text-muted-foreground">Pick a date range</span>
+                            )}
+                          </Button>
+                        }
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
                       <span className="text-xs font-medium">Specific Fund</span>
                       <Select value={fundId} onValueChange={(val: any) => { setFundId(val); setPage(1); }}>
                         <SelectTrigger className="w-full">
@@ -327,6 +358,7 @@ export default function DonorsDirectoryPage() {
                           setSortBy("lastDonation");
                           setSortOrder("desc");
                           setFundId("all");
+                          setDateRange(undefined);
                           setPage(1);
                           setIsFilterOpen(false);
                         }}
