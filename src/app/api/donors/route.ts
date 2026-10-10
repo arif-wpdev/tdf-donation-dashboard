@@ -66,6 +66,12 @@ export async function GET(request: NextRequest) {
 
     const { page, limit, search, minAmount, maxAmount, minCount, maxCount, sortBy, sortOrder, fundId, fromDate, toDate } = parsed.data;
 
+    let adjustedToDate = toDate;
+    if (adjustedToDate) {
+      adjustedToDate = new Date(adjustedToDate);
+      adjustedToDate.setUTCHours(23, 59, 59, 999);
+    }
+
     const where: Prisma.DonorWhereInput = {
       orgId,
       ...(search && {
@@ -93,10 +99,10 @@ export async function GET(request: NextRequest) {
         donations: {
           some: {
             ...(fundId && { fundId }),
-            ...( (fromDate || toDate) && {
+            ...( (fromDate || adjustedToDate) && {
               wcDatePaid: {
                 ...(fromDate && { gte: fromDate }),
-                ...(toDate && { lte: toDate }),
+                ...(adjustedToDate && { lte: adjustedToDate }),
               }
             }),
             status: "COMPLETED",
